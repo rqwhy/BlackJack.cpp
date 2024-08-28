@@ -1,1 +1,3 @@
-# BlackJack.cpp
+# BlackJack
+
+##Правила "Блэк-Джека"
