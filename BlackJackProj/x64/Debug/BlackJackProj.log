@@ -1,3 +1,0 @@
-﻿  BlackJackProj.cpp
-C:\Users\user\Desktop\vs c++\BlackJackProj\BlackJackProj\BlackJackProj.cpp(7,28): warning C4244: =: преобразование "__int64" в "unsigned int", возможна потеря данных
-  BlackJackProj.vcxproj -> C:\Users\user\Desktop\vs c++\BlackJackProj\x64\Debug\BlackJackProj.exe
