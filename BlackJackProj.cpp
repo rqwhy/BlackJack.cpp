@@ -1,10 +1,10 @@
-﻿#include <iostream>
+#include <iostream>
 using namespace std;
 
-// Функция для генерации случайного числа
+// Функция для генерации случайного числа(хз как сделать по человечески с сайта взял)
 int random(int min, int max) {
     static unsigned int seed = 5323;
-    seed = (8253729 * seed + 29345734765);
+    seed = (8253729 * seed + 29345734765); //тут меняешь цифру и меняеться комбинация
     return min + (seed % (max - min + 1));
 }
 
