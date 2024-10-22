@@ -1,149 +1,175 @@
 #include <iostream>
+#include <cstdlib>
+#include <ctime>
+
 using namespace std;
 
-// Функция для генерации случайного числа(хз как сделать по человечески с сайта взял)
-int random(int min, int max) {
-    static unsigned int seed = 5323;
-    seed = (8253729 * seed + 29345734765); //тут меняешь цифру и меняеться комбинация
-    return min + (seed % (max - min + 1));
+#define random(a, b) ((a) + rand() % ((b) - (a) + 1))
+
+// создание главной колоды
+int** CardsSet() {
+    const int WIGHT = 52;
+    int** set = new int* [WIGHT];
+    for (int index = 0, value = 2; value < 15; value++) {
+        for (int suit = 3; suit < 7; suit++) {
+            set[index++] = new int[2]{ value, suit };
+        }
+    }
+    return set;
 }
 
+// замешка колоды
+void shuffleSet(int** set) {
+    srand(static_cast<unsigned int>(time(0)));
+    const int WIGHT = 52;
+    for (int i = 0; i < WIGHT; i++) {
+        int randomIndex = random(0, WIGHT - 1);
+        swap(set[i], set[randomIndex]);
+    }
+}
 
-// Функция для подсчета очков
-int calculateHandValue(const int hand[], int handSize) {
-    int sum = 0;
+// вывод карт
+void showCards(int** set, int countCards) {
+    for (int i = 0; i < countCards; i++) {
+        switch (set[i][0]) {
+        case 11: cout << "J"; break;
+        case 12: cout << "Q"; break;
+        case 13: cout << "K"; break;
+        case 14: cout << "A"; break;
+        default: cout << set[i][0];
+        }
+        cout << char(set[i][1]) << " ";
+    }
+}
+
+// новый вывод карт
+void showHands(int** playerCard, int playerCardCount, int** dealerCard, int dealerCardCount, bool revealDealer = false) {
+    cout << endl << "Твои карты: ";
+    showCards(playerCard, playerCardCount);
+
+    cout << endl << "Карты дилера: ";
+    if (revealDealer) {
+        showCards(dealerCard, dealerCardCount);
+    }
+    else {
+        showCards(dealerCard, 1);
+        cout << " ";
+    }
+}
+
+// раздача игроку и дилеру
+void cardsUser(int** set, int& cardIndex, int** playerCard, int** dealerCard, int& playerCardCount, int& dealerCardCount) {
+    playerCard[playerCardCount++] = set[cardIndex++];
+    dealerCard[dealerCardCount++] = set[cardIndex++];
+    playerCard[playerCardCount++] = set[cardIndex++];
+    dealerCard[dealerCardCount++] = set[cardIndex++];
+}
+
+// добавление карты игроку
+void addCard(int** set, int& cardIndex, int** playerHand, int& playerCardCount) {
+    playerHand[playerCardCount++] = set[cardIndex++];
+}
+
+// подсчет суммы карт
+int cardSumm(int** hand, int cardCount) {
+    int summ = 0;
     int aceCount = 0;
 
-    for (int i = 0; i < handSize; i++) {
-        int card = hand[i];
-        if (card > 10) {
-            sum += 10; // Король, Дама, Валет - 10
+    for (int i = 0; i < cardCount; i++) {
+        int cardValue = hand[i][0];
+        if (cardValue > 10 && cardValue < 14) {
+            summ += 10;
         }
-        else if (card == 1) {
+        else if (cardValue == 14) {
+            summ += 11;
             aceCount++;
-            sum += 11; // Сначала считаем туза - 11
         }
         else {
-            sum += card;
+            summ += cardValue;
         }
     }
 
-    // Если сумма больше 21 и есть тузы, пересчитываем их как 1
-    while (sum > 21 && aceCount > 0) {
-        sum -= 10;
+    while (summ > 21 && aceCount > 0) {
+        summ -= 10;
         aceCount--;
     }
 
-    return sum;
+    return summ;
 }
 
-// Функция для вывода руки игрока
-void printHand(const int hand[], int handSize) {
-    for (int i = 0; i < handSize; i++) {
-        int card = hand[i];
-        if (card == 1) {
-            cout << "A ";
-        }
-        else if (card == 11) {
-            cout << "J ";
-        }
-        else if (card == 12) {
-            cout << "Q ";
-        }
-        else if (card == 13) {
-            cout << "K ";
-        }
-        else {
-            cout << card << " ";
-        }
+bool more21(int** hand, int cardCount) {
+    return cardSumm(hand, cardCount) > 21;
+}
+
+// добавление карты дилеру
+void dealerAddCard(int** set, int& cardIndex, int** dealerHand, int& dealerCardCount) {
+    while (cardSumm(dealerHand, dealerCardCount) < 17) {
+        addCard(set, cardIndex, dealerHand, dealerCardCount);
     }
-    cout << endl;
 }
 
+int main() {
+    setlocale(LC_ALL, "");
 
-int main()
-{
-    setlocale(LC_ALL, "Russian");
-    const int DECK_SIZE = 52;
-    int deck[DECK_SIZE];
-    int playerHand[11], dealerHand[11];
-    int playerHandSize = 0, dealerHandSize = 0;
-        
-    // Создаем колоду карт
+    const int MAX = 10; // максимальное количество карт в руке
+    int** set = CardsSet(); // вся колода
+    shuffleSet(set);
+
+    int playerCardCount = 0;
+    int dealerCardCount = 0;
+    int* playerCard[MAX] = { nullptr }; // колода игрока
+    int* dealerCard[MAX] = { nullptr }; // колода дилера
     int cardIndex = 0;
-    for (int i = 1; i <= 13; i++) { 
-        for (int j = 0; j < 4; j++) {
-            deck[cardIndex++] = i;
-        }
+
+    cardsUser(set, cardIndex, playerCard, dealerCard, playerCardCount, dealerCardCount);
+    showHands(playerCard, playerCardCount, dealerCard, dealerCardCount, false);
+
+    if (cardSumm(playerCard, playerCardCount) == 21) {
+        cout << endl << "Вы выиграли с блэкджеком!" << endl;
+        return 0;
     }
 
-    // Тасуем колоду
-    for (int i = 0; i < DECK_SIZE; i++) {
-        int r = random(0, DECK_SIZE - 1);
-        int temp = deck[i];
-        deck[i] = deck[r];
-        deck[r] = temp;
-    }
+    bool playerMove = true; // проверка хода (чей ход , игрока или дилера)
 
-    // Раздача первых двух карт игроку и дилеру
-    playerHand[playerHandSize++] = deck[--cardIndex];
-    dealerHand[dealerHandSize++] = deck[--cardIndex];
-    playerHand[playerHandSize++] = deck[--cardIndex];
-    dealerHand[dealerHandSize++] = deck[--cardIndex];
+    while (!more21(playerCard, playerCardCount) && playerMove) {
+        int choice2 = 0;
+        cout << endl << "1 - Взять карту, 2 - Оставить" << endl;
+        cin >> choice2;
 
-    cout << "Ваши карты: ";
-    printHand(playerHand, playerHandSize);
-    cout << "Ваши очки: " << calculateHandValue(playerHand, playerHandSize) << endl;
-
-    cout << "Очки дилера (1 карта): ";
-    cout << dealerHand[0] << endl;
-
-    char choice;
-    while (true) {
-        cout << "Хотите взять еще карту? (a/b): ";
-        cin >> choice;
-
-        if (choice == 'a') {
-            playerHand[playerHandSize++] = deck[--cardIndex];
-
-            cout << "Ваши карты: ";
-            printHand(playerHand, playerHandSize);
-            cout << "Очки: " << calculateHandValue(playerHand, playerHandSize) << endl;
-
-            if (calculateHandValue(playerHand, playerHandSize) > 21) {
-                cout << "Вы проиграли!" << endl;
-                return 0;
+        switch (choice2) {
+        case 1:
+            addCard(set, cardIndex, playerCard, playerCardCount);
+            showHands(playerCard, playerCardCount, dealerCard, dealerCardCount, false);
+            if (more21(playerCard, playerCardCount)) {
+                cout << "Вы превысили 21! Вы проиграли." << endl;
+                playerMove = false;
             }
-        }
-        else {
+            break;
+
+        case 2:
+            dealerAddCard(set, cardIndex, dealerCard, dealerCardCount);
+            showHands(playerCard, playerCardCount, dealerCard, dealerCardCount, true);
+            playerMove = false;
+            break;
+
+        default:
+            cout << "Неверный ввод. Попробуйте снова." << endl;
             break;
         }
     }
 
-    cout << "Карты дилера: ";
-    printHand(dealerHand, dealerHandSize);
-    cout << "Очки дилера: " << calculateHandValue(dealerHand, dealerHandSize) << endl;
+    if (!more21(playerCard, playerCardCount)) {
+        int playerSum = cardSumm(playerCard, playerCardCount);
+        int dealerSum = cardSumm(dealerCard, dealerCardCount);
 
-    while (calculateHandValue(dealerHand, dealerHandSize) < 17) {
-        dealerHand[dealerHandSize++] = deck[--cardIndex];
-
-        cout << "Карты дилера: ";
-        printHand(dealerHand, dealerHandSize);
-        cout << "Очки дилера: " << calculateHandValue(dealerHand, dealerHandSize) << endl;
+        if (dealerSum > 21 || playerSum > dealerSum) {
+            cout << endl << "Вы выиграли!" << endl;
+        }
+        else if (dealerSum == playerSum) {
+            cout << endl << "Ничья!" << endl;
+        }
+        else {
+            cout << endl << "Вы проиграли!" << endl;
+        }
     }
-
-    int playerPoints = calculateHandValue(playerHand, playerHandSize);
-    int dealerPoints = calculateHandValue(dealerHand, dealerHandSize);
-
-    if (dealerPoints > 21 || playerPoints > dealerPoints) {
-        cout << "Вы выиграли!" << endl;
-    }
-    else if (playerPoints < dealerPoints) {
-        cout << "Вы проиграли!" << endl;
-    }
-    else {
-        cout << "Ничья!" << endl;
-    }
-
-    return 0;
 }
